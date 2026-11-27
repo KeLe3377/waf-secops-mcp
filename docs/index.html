@@ -102,6 +102,9 @@
           <button class="btn btn-primary" id="sendBtn" onclick="runAgent()">🚀 发送给 Agent</button>
           <button class="btn btn-secondary" onclick="clearChat()">清空</button>
         </div>
+        <div style="font-size:11.5px; color:var(--muted); margin-top:6px">
+          🔒 <strong>说明</strong>：未配置 API Key 时仅支持基于默认样本进行演示，不能输入任意自定义日志；右侧配置真实 API Key 后可解锁自定义日志输入。
+        </div>
       </div>
 
       <div>
@@ -122,8 +125,14 @@
                 <input type="text" id="apiModel" value="deepseek-chat">
               </div>
               <div>
-                <label>API Key（仅在浏览器本地发起请求，绝不上传或保存）</label>
-                <input type="password" id="apiKey" placeholder="sk-...">
+                <label>API Key（仅在浏览器当前内存临时使用，绝不上传或保存）</label>
+                <div style="display:flex; gap:6px; align-items:center">
+                  <input type="password" id="apiKey" placeholder="sk-..." oninput="syncLockState()" style="flex:1">
+                  <button class="btn btn-secondary" type="button" onclick="clearApiKey()" style="white-space:nowrap; background:#fee2e2; color:#b91c1c">🗑️ 删除 Key</button>
+                </div>
+              </div>
+              <div class="alert-box warn" style="margin-top:8px; margin-bottom:0; font-size:11.5px; padding:8px 10px">
+                ⚠️ <strong>安全提醒</strong>：本页面仅在当前浏览器内存中使用您的 Key（刷新/关闭即销毁）。<strong>试用结束后，请务必点击上方「🗑️ 删除 Key」，并前往模型供应商控制台（如 DeepSeek / OpenAI 后台）及时删除该临时 API Key！</strong>
               </div>
             </div>
           </div>
@@ -150,10 +159,13 @@
   <div id="tab-waf" class="hidden">
     <div class="panel">
       <div class="panel-title">
-        <span>输入或编辑 WAF / Nginx 日志（Agent 将实时读取此处的日志）</span>
+        <span>WAF / Nginx 日志源（Agent 将实时读取此处的日志）</span>
         <span style="font-size:12px; color:var(--ok)">✅ 内置 Sanitizer 防 Prompt 注入 & 密钥脱敏</span>
       </div>
-      <textarea id="wafInput"></textarea>
+      <div class="alert-box warn lock-notice" style="font-size:12px; padding:7px 10px; margin-bottom:8px">
+        🔒 <strong>未配置 API Key 时不能输入任意日志，仅显示并分析默认样本</strong>；如需输入自定义日志，请在「1. Agent 对话台」右侧切换并填入真实 API Key。
+      </div>
+      <textarea id="wafInput" readonly></textarea>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="runWafAnalysis()">🔍 刷新统计与图表</button>
         <button class="btn btn-secondary" onclick="loadWafSample()">🔄 重置默认样本</button>
@@ -187,7 +199,10 @@
   <div id="tab-proxy" class="hidden">
     <div class="panel">
       <div class="panel-title"><span>Nginx 反向代理配置（Agent 将实时读取此处配置）</span></div>
-      <textarea id="proxyInput"></textarea>
+      <div class="alert-box warn lock-notice" style="font-size:12px; padding:7px 10px; margin-bottom:8px">
+        🔒 <strong>未配置 API Key 时不能输入任意配置，仅显示并分析默认样本</strong>；如需输入自定义配置，请在「1. Agent 对话台」右侧配置真实 API Key。
+      </div>
+      <textarea id="proxyInput" readonly></textarea>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="runProxyAudit()">🛡️ 运行反向代理安全审计</button>
         <button class="btn-secondary" onclick="loadProxySample()">🔄 加载漏洞配置样本</button>
@@ -200,7 +215,10 @@
   <div id="tab-docker" class="hidden">
     <div class="panel">
       <div class="panel-title"><span>容器运行快照 JSON（Agent 将实时读取此处快照）</span></div>
-      <textarea id="dockerInput"></textarea>
+      <div class="alert-box warn lock-notice" style="font-size:12px; padding:7px 10px; margin-bottom:8px">
+        🔒 <strong>未配置 API Key 时不能输入任意快照，仅显示并分析默认样本</strong>；如需输入自定义快照，请在「1. Agent 对话台」右侧配置真实 API Key。
+      </div>
+      <textarea id="dockerInput" readonly></textarea>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="runDockerInspect()">🐳 运行容器只读诊断</button>
         <button class="btn btn-secondary" onclick="loadDockerSample()">🔄 加载 OOM 故障样本</button>
@@ -260,11 +278,51 @@ function switchTab(id, btn) {
   btn.classList.add('active');
 }
 
+function syncLockState() {
+  const mode = document.querySelector('input[name="agentMode"]:checked').value;
+  const hasKey = Boolean(document.getElementById('apiKey').value.trim());
+  const unlocked = mode === 'real' && hasKey;
+
+  ['wafInput', 'proxyInput', 'dockerInput'].forEach(id => {
+    const el = document.getElementById(id);
+    el.readOnly = !unlocked;
+    el.style.background = unlocked ? '#ffffff' : '#f1f5f9';
+  });
+
+  if (!unlocked) {
+    if (document.getElementById('wafInput').value !== DEFAULT_WAF_LOG) loadWafSample();
+    if (document.getElementById('proxyInput').value !== DEFAULT_PROXY_CONF) loadProxySample();
+    if (document.getElementById('dockerInput').value !== DEFAULT_DOCKER_JSON) loadDockerSample();
+  }
+
+  document.querySelectorAll('.lock-notice').forEach(box => {
+    if (unlocked) {
+      box.className = 'alert-box lock-notice';
+      box.style.borderLeftColor = '#059669';
+      box.style.background = '#ecfdf5';
+      box.innerHTML = '🔓 <strong>已配置 API Key</strong>：已解锁自定义输入模式，您可以自由粘贴任意日志/配置供 Agent 分析（试用后请记得删除 Key）。';
+    } else {
+      box.className = 'alert-box warn lock-notice';
+      box.style.borderLeftColor = '';
+      box.style.background = '';
+      box.innerHTML = '🔒 <strong>未配置 API Key 时不能输入任意日志/配置，仅显示并分析默认样本</strong>；如需输入自定义内容，请在「1. Agent 对话台」右侧切换并填入真实 API Key。';
+    }
+  });
+}
+
+function clearApiKey() {
+  const keyEl = document.getElementById('apiKey');
+  keyEl.value = '';
+  syncLockState();
+  appendStep('step-final', '🗑️ <strong>已从当前浏览器内存清除 API Key</strong>，自定义日志输入已重新锁定为默认样本。<br>⚠️ <strong>安全提醒</strong>：如不再试用，请记得前往模型供应商控制台（如 DeepSeek / OpenAI 后台）删除或吊销该临时 API Key。');
+}
+
 function toggleMode() {
   const mode = document.querySelector('input[name="agentMode"]:checked').value;
   document.getElementById('realApiBox').classList.toggle('hidden', mode !== 'real');
   const badge = document.getElementById('modeBadge');
   badge.textContent = mode === 'real' ? '🔑 真实大模型 Function Calling' : '✨ 免 Key 实时演示模式';
+  syncLockState();
 }
 
 function loadWafSample() { document.getElementById('wafInput').value = DEFAULT_WAF_LOG; runWafAnalysis(); }
@@ -609,7 +667,7 @@ async function runAgent() {
   }
 }
 
-loadWafSample(); loadProxySample(); loadDockerSample();
+loadWafSample(); loadProxySample(); loadDockerSample(); syncLockState();
 </script>
 </body>
 </html>
