@@ -164,6 +164,7 @@ function sanitizeText(s) {
   return String(s || '')
     .replace(/ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/gi, '[REDACTED_PROMPT_INJECTION]')
     .replace(/(reveal|print|output|show)\s+(your\s+)?(system\s+prompt|instructions)/gi, '[REDACTED_PROMPT_INJECTION]')
+    .replace(/you\s+are\s+now\s+(a|an|in)\s+[^,;"]+/gi, '[REDACTED_PROMPT_INJECTION]')
     .replace(/(Bearer\s+)[A-Za-z0-9\-._~+/]+=*/gi, '$1[REDACTED_TOKEN]')
     .replace(/eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{3,}/g, '[REDACTED_JWT]')
     .replace(/((?:api[_-]?key|token|secret|password)\s*[=:]\s*)([^\s&;"']+)/gi, '$1[REDACTED]');
@@ -186,9 +187,10 @@ function runWafAnalysis() {
   const rules = {
     'SQL注入(SQLi)': /(union\s+select|'\s*or\s+1=1|--\s*$|sleep\()/i,
     '路径穿越': /(\.\.\/|\.\.\\|\/etc\/passwd)/i,
-    '敏感文件(.env/.git)': /(\/\.env|\/\.git|\/actuator)/i,
+    '敏感文件(.env/.git)': /(\/\.env|\/\.git|\/wp-config\.php|\/actuator)/i,
+    'Webshell探测': /(cmd=|eval\(|shell\.php|antsword)/i,
     '跨站脚本(XSS)': /(\x3cscript|onerror=|alert\()/i,
-    '日志Prompt注入': /(ignore\s+(all\s+)?(previous|prior)\s+instructions|system\s+prompt)/i
+    '日志Prompt注入': /(ignore\s+(all\s+)?(previous|prior|above)\s+instructions|system\s+prompt|you\s+are\s+now\s+(a|an|in)\s+|output\s+(your\s+)?instructions)/i
   };
 
   let total = 0, blocked = 0, attackTotal = 0;
