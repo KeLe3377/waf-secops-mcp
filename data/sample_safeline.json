@@ -1,0 +1,3 @@
+{"timestamp": "2026-11-27 10:15:01", "client_ip": "10.20.30.88", "method": "POST", "uri": "/api/login?user=' OR 1=1--", "status": 403, "action": "BLOCK", "rule": "SafeLine-SQLi-1001", "country": "CN", "user_agent": "sqlmap/1.8"}
+{"timestamp": "2026-11-27 10:16:22", "client_ip": "10.20.30.88", "method": "GET", "uri": "/.git/config", "status": 403, "action": "BLOCK", "rule": "SafeLine-SensitiveFile-2004", "country": "CN", "user_agent": "Nuclei"}
+{"timestamp": "2026-11-27 10:20:05", "client_ip": "192.168.10.21", "method": "GET", "uri": "/index.html", "status": 200, "action": "ALLOW", "rule": "-", "country": "CN", "user_agent": "Mozilla/5.0"}

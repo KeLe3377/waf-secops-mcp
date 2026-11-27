@@ -1,0 +1,10 @@
+services:
+  waf-secops-mcp:
+    build: .
+    container_name: waf-secops-mcp
+    volumes:
+      - ./data:/app/data:ro
+      - ./reports:/app/reports
+    read_only: true
+    tmpfs:
+      - /tmp

@@ -1,0 +1,22 @@
+{
+  "containers": [
+    {
+      "name": "safeline-waf-tengine",
+      "state": "running",
+      "exit_code": 0,
+      "recent_logs": [
+        "INFO: upstream healthy",
+        "WARN: blocked suspicious request from 10.20.30.88"
+      ]
+    },
+    {
+      "name": "agent-api-worker",
+      "state": "exited",
+      "exit_code": 137,
+      "recent_logs": [
+        "ERROR: upstream connection refused at 127.0.0.1:8321",
+        "FATAL: worker process killed by kernel OOM killer Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc"
+      ]
+    }
+  ]
+}

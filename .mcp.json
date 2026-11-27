@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "waf-secops-mcp": {
+      "command": "python",
+      "args": ["-m", "src.server"],
+      "cwd": "E:/project/JDresume/waf-secops-mcp"
+    }
+  }
+}
